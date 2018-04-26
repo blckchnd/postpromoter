@@ -61,7 +61,12 @@ function startup() {
       sortBids(queue);
       queue.reverse();
       return res.json({
-          queue: queue.map(a => { return {amount: a.amount, url: a.url} }),
+          queue: queue.map(a => {
+            var minutes=((new Date() - new Date(a.created))/(60*1000));
+            var hours = Math.floor( minutes / 60 );
+            minutes = Math.floor(minutes) % 60;
+            return {amount: a.amount, url: a.url, left: hours+":"+minutes}
+          }),
           last_round: last_round.map(a => { return {amount: a.amount, url: a.url} })
       });
     });
