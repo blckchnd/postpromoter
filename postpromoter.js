@@ -62,7 +62,7 @@ function startup() {
       queue.reverse();
       return res.json({
           queue: queue.map(a => {
-            var minutes=((new Date() - new Date(a.created))/(60*1000));
+            var minutes= config.max_post_age * 60 -(new Date() - new Date(a.created))/(60*1000);
             var hours = Math.floor( minutes / 60 );
             minutes = Math.floor(minutes) % 60;
             return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
