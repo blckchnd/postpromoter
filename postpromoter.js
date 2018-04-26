@@ -272,7 +272,8 @@ function startVoting(bids) {
 }
 
 function vote(bids) {
-  // Get the first bid in the list
+  // Get the first bid in the listbids
+  var bidsCopy = bids.slice();
   sendVoterVote(bids.pop(), 0, function () {
     // If there are more bids, vote on the next one after 10 seconds
     if (bids.length > 0) {
@@ -287,7 +288,7 @@ function vote(bids) {
       }, 5000);
     }
   });
-  sendAccountVote(bids.pop(), 0, null);
+  sendAccountVote(bidsCopy.pop(), 0, null);
 }
 
 function comment(bids) {
