@@ -65,7 +65,7 @@ function startup() {
             var minutes=((new Date() - new Date(a.created))/(60*1000));
             var hours = Math.floor( minutes / 60 );
             minutes = Math.floor(minutes) % 60;
-            return {amount: a.amount, url: a.url, left: hours+":"+minutes}
+            return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
           }),
           last_round: last_round.map(a => { return {amount: a.amount, url: a.url} })
       });
