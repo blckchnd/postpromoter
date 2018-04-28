@@ -450,8 +450,8 @@ function getTransactions(callback) {
               refund(op[1].from, amount, currency, 'bot_disabled');
             } else if(config.currencies_accepted && config.currencies_accepted.indexOf(currency) < 0) {
               // Sent an unsupported currency
-              //refund(op[1].from, amount, currency, 'invalid_currency');
-                utils.log("invalid bid: invalid_currency");
+              refund(op[1].from, amount, currency, 'invalid_currency');
+                //utils.log("invalid bid: invalid_currency");
             } else {
               // Bid amount is just right!
               checkPost(id, op[1].memo, amount, currency, op[1].from, 0);
@@ -518,8 +518,8 @@ function checkPost(id, memo, amount, currency, sender, retries) {
     }
 
     if (author == '' || permLink == '') {
-      //refund(sender, amount, currency, 'invalid_post_url');
-        utils.log("invalid bid: invalid_post_url");
+      refund(sender, amount, currency, 'invalid_post_url');
+      //  utils.log("invalid bid: invalid_post_url");
       return;
     }
 
@@ -602,12 +602,12 @@ function checkPost(id, memo, amount, currency, sender, retries) {
             if(config.min_post_age && config.min_post_age > 0 && (new Date() - created + (time_until_vote * 1000)) < (config.min_post_age * 60 * 1000)) {
               //push_to_next_round = true;
               //refund(sender, 0.001, currency, 'min_age');
-                utils.log("invalid bid: invalid_currency");
+                utils.log("invalid bid: min_age");
             }
         } else if(result && result.id == 0) {
           // Invalid memo
-          //refund(sender, amount, currency, 'invalid_post_url');
-            utils.log("invalid bid: invalid_currency");
+            refund(sender, amount, currency, 'invalid_post_url');
+            //utils.log("invalid bid: invalid_post_url");
           return;
         } else {
           logError('Error loading post: ' + memo + ', Error: ' + err);
@@ -675,7 +675,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           // Check that the new total doesn't exceed the max bid amount per post
           // if (new_amount > max_bid) {
           //     //refund(sender, amount, currency, 'above_max_bid');
-          //     utils.log("invalid bid: invalid_currency");
+          //     utils.log("invalid bid: above_max_bid");
           // } else {
             existing_bid.amount = new_amount;
           // }
@@ -800,8 +800,14 @@ function refund(sender, amount, currency, reason, retries, data) {
   if(!retries)
     retries = 0;
 
+  if (amount < 1) {
+      utils.log('No refund small amount');
+      return;
+  }
+
   // Make sure refunds are enabled and the sender isn't on the no-refund list (for exchanges and things like that).
-  if (reason != 'forward_payment' && (!config.refunds_enabled || sender == config.account || (config.no_refund && config.no_refund.indexOf(sender) >= 0))) {
+  if (reason != 'forward_payment'
+      && (!config.refunds_enabled || sender == config.account || (config.no_refund && config.no_refund.indexOf(sender) >= 0))) {
     utils.log("Invalid bid - " + reason + ' NO REFUND');
 
     // If this is a payment from an account on the no_refund list, forward the payment to the post_rewards_withdrawal_account
