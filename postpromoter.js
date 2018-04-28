@@ -226,6 +226,7 @@ function checkOutdated() {
       if ((new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
           // This post is already voted on by this bot or the post is too old to be voted on
           //refund(bid.sender, bid.amount, bid.currency, 'max_age');
+          utils.log("invalid bid: max_age");
           return;
       }
       updated_list.push(bid);
@@ -450,6 +451,7 @@ function getTransactions(callback) {
             } else if(config.currencies_accepted && config.currencies_accepted.indexOf(currency) < 0) {
               // Sent an unsupported currency
               //refund(op[1].from, amount, currency, 'invalid_currency');
+                utils.log("invalid bid: invalid_currency");
             } else {
               // Bid amount is just right!
               checkPost(id, op[1].memo, amount, currency, op[1].from, 0);
@@ -517,6 +519,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
     if (author == '' || permLink == '') {
       //refund(sender, amount, currency, 'invalid_post_url');
+        utils.log("invalid bid: invalid_post_url");
       return;
     }
 
@@ -529,7 +532,8 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
     // If this bot is whitelist-only then make sure the author is on the whitelist
     if(config.blacklist_settings.whitelist_only && whitelist.indexOf(author) < 0) {
-      refund(sender, amount, currency, 'whitelist_only');
+      //refund(sender, amount, currency, 'whitelist_only');
+        utils.log("invalid bid: whitelist_only");
       return;
     }
 
@@ -552,6 +556,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
             // If comments are not allowed then we need to first check if the post is a comment
             if(!config.allow_comments && (result.parent_author != null && result.parent_author != '')) {
               //refund(sender, amount, currency, 'no_comments');
+                utils.log("invalid bid: no_comments");
               return;
             }
 
@@ -564,6 +569,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
                 if(tag) {
                   //refund(sender, amount, currency, 'blacklist_tag', 0, tag);
+                    utils.log("invalid bid: blacklist_tag");
                   return;
                 }
               }
@@ -578,6 +584,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
             if (votes.length > 0 || (new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
                 // This post is already voted on by this bot or the post is too old to be voted on
                 //refund(sender, amount, currency, ((votes.length > 0) ? 'already_voted' : 'max_age'));
+                utils.log("invalid bid:" + ((votes.length > 0) ? 'already_voted' : 'max_age'));
                 return;
             }
 
@@ -595,10 +602,12 @@ function checkPost(id, memo, amount, currency, sender, retries) {
             if(config.min_post_age && config.min_post_age > 0 && (new Date() - created + (time_until_vote * 1000)) < (config.min_post_age * 60 * 1000)) {
               //push_to_next_round = true;
               //refund(sender, 0.001, currency, 'min_age');
+                utils.log("invalid bid: invalid_currency");
             }
         } else if(result && result.id == 0) {
           // Invalid memo
           //refund(sender, amount, currency, 'invalid_post_url');
+            utils.log("invalid bid: invalid_currency");
           return;
         } else {
           logError('Error loading post: ' + memo + ', Error: ' + err);
@@ -609,7 +618,8 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           else {
             utils.log('============= Load post failed three times for: ' + memo + ' ===============');
 
-            refund(sender, amount, currency, 'invalid_post_url');
+            //refund(sender, amount, currency, 'invalid_post_url');
+              utils.log("invalid bid: invalid_post_url2");
             return;
           }
         }
@@ -634,6 +644,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                 // Bid amount is too low (make sure it's above the min_refund_amount setting)
                 if(!config.min_refund_amount || amount >= config.min_refund_amount) {
                     //refund(op[1].from, amount, currency, 'below_min_bid');
+                    utils.log("invalid bid: below_min_bid");
                     return;
                 } else {
                     utils.log('Invalid bid - below min bid amount and too small to refund.');
@@ -641,6 +652,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
             } else if (amount > max_bid) {
                 // Bid amount is too high
                 //refund(op[1].from, amount, currency, 'above_max_bid');
+               utils.log("invalid bid: above_max_bid");
             }
         }
 
@@ -661,11 +673,12 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           var max_bid = config.max_bid ? parseFloat(config.max_bid) : 9999;
 
           // Check that the new total doesn't exceed the max bid amount per post
-          if (new_amount > max_bid) {
-              refund(sender, amount, currency, 'above_max_bid');
-          } else {
+          // if (new_amount > max_bid) {
+          //     //refund(sender, amount, currency, 'above_max_bid');
+          //     utils.log("invalid bid: invalid_currency");
+          // } else {
             existing_bid.amount = new_amount;
-          }
+          // }
         } else {
           // All good - push to the array of valid bids for this round
           utils.log('Valid Bid - Amount: ' + amount + ' ' + currency + ', Title: ' + result.title);
