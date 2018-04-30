@@ -69,7 +69,7 @@ function startup() {
             return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
           }),
           last_round: last_round.map(a => { return {amount: a.amount, url: a.url} }),
-          time: current_vp ? utils.toTimer(utils.timeTilFullPower(current_vp)) : "unknown"
+          time: current_vp ? utils.timeTilFullPower(current_vp) : -1
       });
     });
     app.listen(port, () => utils.log('API running on port ' + port))
