@@ -22,6 +22,7 @@ var sbd_price = 1;    // This will get overridden with actual prices if a price_
 var version = '1.9.3';
 
 var current_bid = null;
+var current_vp = null;
 
 startup();
 
@@ -67,7 +68,8 @@ function startup() {
             minutes = Math.floor(minutes) % 60;
             return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
           }),
-          last_round: last_round.map(a => { return {amount: a.amount, url: a.url} })
+          last_round: last_round.map(a => { return {amount: a.amount, url: a.url} }),
+          time: current_vp ? utils.toTimer(utils.timeTilFullPower(current_vp)) : "unknown"
       });
     });
     app.listen(port, () => utils.log('API running on port ' + port))
@@ -152,6 +154,7 @@ function startProcess() {
 			if (account && voting_account && !isVoting) {
 				// Load the current voting power of the account
 				var vp = utils.getVotingPower(voting_account);
+				current_vp = vp;
 
 				if(config.detailed_logging) {
 					var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GOLOS') ? b.amount : 0); }, 0), 3);
