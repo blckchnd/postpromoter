@@ -652,6 +652,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                 } else {
                     utils.log('Invalid bid - below min bid amount and too small to refund.');
                 }
+                return;
             } else if (amount > max_bid) {
                 // Bid amount is too high
                 //refund(op[1].from, amount, currency, 'above_max_bid');
