@@ -254,20 +254,36 @@ function startProcess() {
 }
 
 function checkOutdated() {
-  var updated_list = [];
+    var updated_list = [];
 
-  outstanding_bids.forEach(bid => {
-      var created = new Date(bid.created);
-      if ((new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
-          // This post is already voted on by this bot or the post is too old to be voted on
-          //refund(bid.sender, bid.amount, bid.currency, 'max_age');
-          utils.log("invalid bid: max_age");
-          return;
-      }
-      updated_list.push(bid);
-  });
+    outstanding_bids.forEach(bid => {
+        var created = new Date(bid.created);
+        if ((new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
+            // This post is already voted on by this bot or the post is too old to be voted on
+            //refund(bid.sender, bid.amount, bid.currency, 'max_age');
+            utils.log("invalid bid: max_age");
+            return;
+        }
+        updated_list.push(bid);
+    });
 
-  outstanding_bids = updated_list;
+    outstanding_bids = updated_list;
+
+    // update memes list
+    var updated_meme_list = [];
+
+    memestagram_bids.forEach(bid => {
+        var created = new Date(bid.created);
+        if ((new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
+            // This post is already voted on by this bot or the post is too old to be voted on
+            //refund(bid.sender, bid.amount, bid.currency, 'max_age');
+            utils.log("invalid bid: max_age");
+            return;
+        }
+        updated_meme_list.push(bid);
+    });
+
+    memestagram_bids = updated_meme_list;
 }
 
 function startVoting(bids) {
