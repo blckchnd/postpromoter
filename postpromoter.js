@@ -62,7 +62,9 @@ function startup() {
       var queue = outstanding_bids.slice();
       var meme_queue = memestagram_bids.slice();
       sortBids(queue);
+      sortBids(meme_queue);
       queue.reverse();
+      meme_queue.reverse();
       return res.json({
           queue: queue.map(a => {
             var minutes= config.max_post_age * 60 -(new Date() - new Date(a.created))/(60*1000);
@@ -1237,6 +1239,7 @@ function processMemeQueue() {
     var move_meme_max = config.move_meme_max ? parseFloat(config.move_meme_max) : 45;
 
     sortBids(memestagram_bids);
+    memestagram_bids.reverse();
 
     var currentQueueTotal = 0;
     memestagram_bids.forEach((bid) => {
