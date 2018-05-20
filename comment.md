@@ -1,1 +1,1 @@
-✅🤙 @whalepunk
+✅🤙 @{botname}

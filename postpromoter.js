@@ -6,6 +6,7 @@ var account = null;
 var voting_account = null;
 var last_trans = 0;
 var outstanding_bids = [];
+var memestagram_bids = [];
 var delegators = [];
 var last_round = [];
 var next_round = [];
@@ -59,6 +60,7 @@ function startup() {
 
     app.get('/api/bids', (req, res) => {
       var queue = outstanding_bids.slice();
+      var meme_queue = memestagram_bids.slice();
       sortBids(queue);
       queue.reverse();
       return res.json({
@@ -66,7 +68,21 @@ function startup() {
             var minutes= config.max_post_age * 60 -(new Date() - new Date(a.created))/(60*1000);
             var hours = Math.floor( minutes / 60 );
             minutes = Math.floor(minutes) % 60;
-            return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
+            if (a.url) {
+                return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
+            } else if (a.bids) {
+                var urls = [];
+                a.bids.forEach(bid => {
+                    urls.push(bid.url);
+                });
+                return {amount: a.amount, urls: urls, left: hours + "h " + minutes + "m"}
+            }
+          }),
+          meme_queue: meme_queue.map(a => {
+              var minutes = config.max_post_age * 60 -(new Date() - new Date(a.created))/(60*1000);
+              var hours = Math.floor( minutes / 60 );
+              minutes = Math.floor(minutes) % 60;
+              return {amount: a.amount, url: a.url, left: hours+"h "+minutes+"m"}
           }),
           last_round: last_round.map(a => { return {amount: a.amount, url: a.url} }),
           time: current_vp ? utils.timeTilFullPower(current_vp) : -1
@@ -84,6 +100,9 @@ function startup() {
 
     if (state.outstanding_bids)
       outstanding_bids = state.outstanding_bids;
+
+      if (state.memestagram_bids)
+          memestagram_bids = state.memestagram_bids;
 
     if (state.last_round)
       last_round = state.last_round;
@@ -176,11 +195,19 @@ function startProcess() {
 						// Sort by id
                         sortBids(outstanding_bids);
 
-                        var bids = [];
-                        bids.push(outstanding_bids.pop());
+                        var bid = outstanding_bids.pop();
 
 						// Make a copy of the list of outstanding bids and vote on them
-						startVoting(bids.slice());
+                        var bids = null;
+                        if (bid.url) {
+                            bids = [];
+                            bids.push(bid);
+                        } else if (bid.bids) {
+                            bids = bid.bids;
+                        }
+
+                        startVoting(bids.slice());
+
 
 						// Save the last round of bids for use in API call
 						last_round = bids.slice();
@@ -205,6 +232,9 @@ function startProcess() {
 
 				// Load transactions to the bot account
 				getTransactions();
+
+				// Processing memes queue
+                processMemeQueue();
 
 				// Save the state of the bot to disk
 				saveState();
@@ -247,33 +277,33 @@ function startVoting(bids) {
 
   // Sum the amounts of all of the bids
   var total = bids.reduce(function(total, bid) {
-    return total + getUsdValue(bid);
+    return total + bid.amount;
   }, 0);
 
-  var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GOLOS') ? b.amount : 0); }, 0), 3);
-  var bids_sbd = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GBG') ? b.amount : 0); }, 0), 3);
-  utils.log('=======================================================');
-  utils.log('Bidding Round End! Starting to vote! Total bids: ' + bids.length + ' - $' + total + ' | ' + bids_sbd + ' GBG | ' + bids_steem + ' GOLOS');
+  // var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GOLOS') ? b.amount : 0); }, 0), 3);
+  // var bids_sbd = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GBG') ? b.amount : 0); }, 0), 3);
+  // utils.log('=======================================================');
+  // utils.log('Bidding Round End! Starting to vote! Total bids: ' + bids.length + ' - $' + total + ' | ' + bids_sbd + ' GBG | ' + bids_steem + ' GOLOS');
 
-  var adjusted_weight = 1;
-
-  if(config.max_roi != null && config.max_roi != undefined && !isNaN(config.max_roi)) {
-    var vote_value = utils.getVoteValue(100, voting_account, 10000);
-    var vote_value_usd = vote_value / 2 * sbd_price + vote_value / 2;
-    //min_total_bids_value_usd: calculates the minimum value in USD that the total bids must have to represent a maximum ROI defined in config.json
-    //'max_roi' in config.json = 10 represents a maximum ROI of 10%
-    var min_total_bids_value_usd = vote_value_usd * 0.75 * ((100 - config.max_roi) / 100 );
-    // calculates the value of the weight of the vote needed to give the maximum ROI defined
-    adjusted_weight = (total < min_total_bids_value_usd) ? (total / min_total_bids_value_usd) : 1;
-    utils.log('Total vote weight: ' + (config.batch_vote_weight * adjusted_weight));
-  }
+  // var adjusted_weight = 1;
+  //
+  // if(config.max_roi != null && config.max_roi != undefined && !isNaN(config.max_roi)) {
+  //   var vote_value = utils.getVoteValue(100, voting_account, 10000);
+  //   var vote_value_usd = vote_value / 2 * sbd_price + vote_value / 2;
+  //   //min_total_bids_value_usd: calculates the minimum value in USD that the total bids must have to represent a maximum ROI defined in config.json
+  //   //'max_roi' in config.json = 10 represents a maximum ROI of 10%
+  //   var min_total_bids_value_usd = vote_value_usd * 0.75 * ((100 - config.max_roi) / 100 );
+  //   // calculates the value of the weight of the vote needed to give the maximum ROI defined
+  //   adjusted_weight = (total < min_total_bids_value_usd) ? (total / min_total_bids_value_usd) : 1;
+  //   utils.log('Total vote weight: ' + (config.batch_vote_weight * adjusted_weight));
+  // }
 
   utils.log('=======================================================');
 
   for(var i = 0; i < bids.length; i++) {
     // Calculate the vote weight to be used for each bid based on the amount bid as a percentage of the total bids
     //bids[i].weight = Math.round(config.batch_vote_weight * adjusted_weight * 100 * (getUsdValue(bids[i]) / total));
-    bids[i].weight = 100 * 100;
+    bids[i].weight = Math.floor(10000.0 * bids[i].amount / total);
   }
 
   comment(bids.slice());
@@ -297,7 +327,8 @@ function vote(bids) {
       }, 5000);
     }
   });
-  sendAccountVote(bidsCopy.pop(), 0, null);
+  if (voting_account.name !== account.name)
+    sendAccountVote(bidsCopy.pop(), 0, null);
 }
 
 function comment(bids) {
@@ -373,7 +404,7 @@ function sendComment(bid) {
     var permlink = 're-' + bid.author.replace(/\./g, '') + '-' + bid.permlink + '-' + new Date().toISOString().replace(/-|:|\./g, '').toLowerCase();
 
     // Replace variables in the promotion content
-    content = content.replace(/\{weight\}/g, utils.format(bid.weight / 100)).replace(/\{botname\}/g, config.account).replace(/\{sender\}/g, bid.sender);
+    content = content.replace(/\{weight\}/g, utils.format(bid.weight / 100)).replace(/\{botname\}/g, config.voting_account).replace(/\{sender\}/g, bid.sender);
 
     // Broadcast the comment
     steem.broadcast.comment(config.posting_key, bid.author, bid.permlink, account.name, permlink, permlink, content, '{"app":"postpromoter/' + version + '"}', function (err, result) {
@@ -503,6 +534,13 @@ function checkRoundFillLimit(amount, currency) {
   return (vote_value_usd * 0.75 * config.round_fill_limit < bid_value + new_bid_value);
 }
 
+function isMemestagram(post) {
+    var meta = JSON.parse(post.json_metadata);
+
+    if (meta.app && meta.app === 'memestagram') return true;
+    return false;
+}
+
 function checkPost(id, memo, amount, currency, sender, retries) {
     // Parse the author and permlink from the memo URL
     memo = memo.trim();
@@ -515,6 +553,10 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           break;
       case 'dmania.lol':
           var author = memo.substring(memo.indexOf("/post/")+6,memo.lastIndexOf('/'));
+          break;
+      case 'memestagram.io':
+      case 'www.memestagram.io':
+          var author = memo.substring(memo.indexOf("/card/")+6,memo.lastIndexOf('/'));
           break;
       default:
           var author = memo.substring(memo.lastIndexOf('@') + 1, memo.lastIndexOf('/'));
@@ -642,22 +684,57 @@ function checkPost(id, memo, amount, currency, sender, retries) {
         var min_bid = config.min_bid ? parseFloat(config.min_bid) : 0;
         var max_bid = config.max_bid ? parseFloat(config.max_bid) : 9999;
 
-        if (!existing_bid) {
-           if(amount < min_bid) {
-                // Bid amount is too low (make sure it's above the min_refund_amount setting)
-                if(!config.min_refund_amount || amount >= config.min_refund_amount) {
-                    //refund(op[1].from, amount, currency, 'below_min_bid');
-                    utils.log("invalid bid: below_min_bid");
-                    return;
-                } else {
-                    utils.log('Invalid bid - below min bid amount and too small to refund.');
-                }
-                return;
-            } else if (amount > max_bid) {
-                // Bid amount is too high
-                //refund(op[1].from, amount, currency, 'above_max_bid');
-               utils.log("invalid bid: above_max_bid");
+
+        if(amount < min_bid) {
+
+           if (!existing_bid) {
+
+               var min_meme_bid = config.min_meme_bid ? parseFloat(config.min_meme_bid) : 0;
+
+               // another rules for memestagram
+               if (isMemestagram(result)) {
+                   var existing_meme_bid = memestagram_bids.find(bid => bid.url == result.url);
+
+                   if (existing_meme_bid) {
+                       // There is already a bid for this post in the current round
+                       utils.log('Existing Meme Bid Found - New Amount: ' + amount + ', Total Amount: ' + (existing_bid.amount + amount));
+
+                       var new_amount = 0;
+
+                       if (existing_meme_bid.currency == currency) {
+                           new_amount = existing_meme_bid.amount + amount;
+                       } else if (existing_meme_bid.currency == 'GOLOS') {
+                           new_amount = existing_meme_bid.amount + amount * sbd_price / steem_price;
+                       } else if (existing_meme_bid.currency == 'GBG') {
+                           new_amount = existing_meme_bid.amount + amount * steem_price / sbd_price;
+                       }
+                       existing_meme_bid.amount = new_amount;
+                   } else {
+                       if (amount < config.min_meme_bid) {
+                           utils.log("invalid bid: below_min_bid");
+                           return;
+                       } else {
+                           utils.log('Valid Meme Bid - Amount: ' + amount + ' ' + currency + ', Title: ' + result.title);
+                           memestagram_bids.push({ id: id, created: created, amount: amount, currency: currency, sender: sender, author: result.author, permlink: result.permlink, url: result.url });
+                       }
+                   }
+                   return;
+               } else {
+                   // Bid amount is too low (make sure it's above the min_refund_amount setting)
+                   if(!config.min_refund_amount || amount >= config.min_refund_amount) {
+                       //refund(op[1].from, amount, currency, 'below_min_bid');
+                       utils.log("invalid bid: below_min_bid");
+                       return;
+                   } else {
+                       utils.log('Invalid bid - below min bid amount and too small to refund.');
+                   }
+                   return;
+               }
             }
+        } else if (amount > max_bid) {
+            // Bid amount is too high
+            //refund(op[1].from, amount, currency, 'above_max_bid');
+            utils.log("invalid bid: above_max_bid");
         }
 
         if(existing_bid) {
@@ -758,6 +835,7 @@ function checkWitnessVote(sender, voter, currency) {
 function saveState() {
   var state = {
     outstanding_bids: outstanding_bids,
+    memestagram_bids: memestagram_bids,
     last_round: last_round,
     next_round: next_round,
     last_trans: last_trans,
@@ -1149,6 +1227,31 @@ function loadPrices() {
       utils.log('Error loading GBG price: ' + err);
     }
   });
+}
+
+function processMemeQueue() {
+    var currentQueue = [];
+    var nextQueue = [];
+
+    var move_meme_min = config.move_meme_min ? parseFloat(config.move_meme_min) : 35;
+    var move_meme_max = config.move_meme_max ? parseFloat(config.move_meme_max) : 45;
+
+    var currentQueueTotal = 0;
+    memestagram_bids.forEach((bid) => {
+        if ((currentQueueTotal + bid.amount) > move_meme_max) {
+            nextQueue.push(bid);
+            return;
+        }
+        currentQueueTotal += bid.amount;
+        currentQueue.push(bid);
+    });
+
+    if (currentQueueTotal >= move_meme_min) {
+        outstanding_bids.push({ id: currentQueue[0].id, created: new Date(), amount: currentQueueTotal, currency: "GBG", sender: "memestagram", bids: currentQueue });
+        currentQueue = [];
+    }
+
+    memestagram_bids = [].concat(currentQueue).concat(nextQueue);
 }
 
 function getUsdValue(bid) { return bid.amount * ((bid.currency == 'GBG') ? sbd_price : steem_price); }

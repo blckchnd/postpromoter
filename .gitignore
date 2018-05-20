@@ -2,6 +2,9 @@
 config.json
 state.json
 
+# backup
+*.bak
+
 # Logs
 logs
 *.log
