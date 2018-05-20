@@ -678,7 +678,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
         var round = push_to_next_round ? next_round : outstanding_bids;
 
         // Check if there is already a bid for this post in the current round
-        var existing_bid = round.find(bid => bid.url == result.url);
+        var existing_bid = round.find(bid => bid.url === result.url);
 
         // Check for min and max bid values in configuration settings
         var min_bid = config.min_bid ? parseFloat(config.min_bid) : 0;
@@ -693,11 +693,11 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
                // another rules for memestagram
                if (isMemestagram(result)) {
-                   var existing_meme_bid = memestagram_bids.find(bid => bid.url == result.url);
+                   var existing_meme_bid = memestagram_bids.find(bid => bid.url === result.url);
 
                    if (existing_meme_bid) {
                        // There is already a bid for this post in the current round
-                       utils.log('Existing Meme Bid Found - New Amount: ' + amount + ', Total Amount: ' + (existing_bid.amount + amount));
+                       utils.log('Existing Meme Bid Found - New Amount: ' + amount + ', Total Amount: ' + (existing_meme_bid.amount + amount));
 
                        var new_amount = 0;
 
