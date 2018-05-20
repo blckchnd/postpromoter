@@ -481,6 +481,8 @@ function getTransactions(callback) {
             var currency = utils.getCurrency(op[1].amount);
             utils.log("Incoming Bid! From: " + op[1].from + ", Amount: " + op[1].amount + ", memo: " + op[1].memo);
 
+            var memo_bid = config.memo_bid ? parseFloat(config.memo_bid) : 1;
+
             if(config.disabled_mode) {
               // Bot is disabled, refund all Bids
               refund(op[1].from, amount, currency, 'bot_disabled');
@@ -488,6 +490,9 @@ function getTransactions(callback) {
               // Sent an unsupported currency
               refund(op[1].from, amount, currency, 'invalid_currency');
                 //utils.log("invalid bid: invalid_currency");
+            } else if(amount < memo_bid) { // memo bid
+                // Bid amount is too low
+                utils.log('Invalid bid - looks like memo bid.');
             } else {
               // Bid amount is just right!
               checkPost(id, op[1].memo, amount, currency, op[1].from, 0);
@@ -654,7 +659,6 @@ function checkPost(id, memo, amount, currency, sender, retries) {
         } else if(result && result.id == 0) {
           // Invalid memo
             refund(sender, amount, currency, 'invalid_post_url');
-            //utils.log("invalid bid: invalid_post_url");
           return;
         } else {
           logError('Error loading post: ' + memo + ', Error: ' + err);
@@ -665,8 +669,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           else {
             utils.log('============= Load post failed three times for: ' + memo + ' ===============');
 
-            //refund(sender, amount, currency, 'invalid_post_url');
-              utils.log("invalid bid: invalid_post_url2");
+              refund(sender, amount, currency, 'invalid_post_url');
             return;
           }
         }
@@ -712,6 +715,27 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                        }
                        existing_meme_bid.amount = new_amount;
                    } else {
+
+                       // if in pack already
+                       let isInPack = false;
+                       for (var i = 0; i < outstanding_bids.length; i++) {
+                           if (isInPack) break;
+                           if (outstanding_bids[i].bids) {
+                               for (var j = 0; j < outstanding_bids[i].bids.length; j++) {
+                                   if (outstanding_bids[i].bids[j].url === result.url) {
+                                       isInPack = true;
+                                       break;
+                                   }
+                               }
+                           }
+                       }
+                       if (isInPack) {
+                           let refundAmount = amount-0.5;
+                           if (refundAmount > 0)
+                               refund(sender, refundAmount, currency, 'is_in_pack_already');
+                           return;
+                       }
+
                        if (amount < config.min_meme_bid) {
                            utils.log("invalid bid: below_min_bid");
                            return;
@@ -1238,12 +1262,20 @@ function processMemeQueue() {
     var move_meme_min = config.move_meme_min ? parseFloat(config.move_meme_min) : 35;
     var move_meme_max = config.move_meme_max ? parseFloat(config.move_meme_max) : 45;
 
+    var min_bid = config.min_bid ? parseFloat(config.min_bid) : 0;
+
     sortBids(memestagram_bids);
     memestagram_bids.reverse();
 
     var currentQueueTotal = 0;
     var isFull = false;
     memestagram_bids.forEach((bid) => {
+        // if amount enough for normal bid - move to uplift
+        if (bid.amount > min_bid) {
+            outstanding_bids.push(bid);
+            return;
+        }
+
         if (isFull || (currentQueueTotal + bid.amount) > move_meme_max) {
             nextQueue.push(bid);
             return;
