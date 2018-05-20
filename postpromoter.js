@@ -1236,6 +1236,8 @@ function processMemeQueue() {
     var move_meme_min = config.move_meme_min ? parseFloat(config.move_meme_min) : 35;
     var move_meme_max = config.move_meme_max ? parseFloat(config.move_meme_max) : 45;
 
+    sortBids(memestagram_bids);
+
     var currentQueueTotal = 0;
     memestagram_bids.forEach((bid) => {
         if ((currentQueueTotal + bid.amount) > move_meme_max) {
