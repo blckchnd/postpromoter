@@ -1242,21 +1242,27 @@ function processMemeQueue() {
     memestagram_bids.reverse();
 
     var currentQueueTotal = 0;
+    var isFull = false;
     memestagram_bids.forEach((bid) => {
-        if ((currentQueueTotal + bid.amount) > move_meme_max) {
+        if (isFull || (currentQueueTotal + bid.amount) > move_meme_max) {
             nextQueue.push(bid);
             return;
         }
         currentQueueTotal += bid.amount;
         currentQueue.push(bid);
+
+        if (currentQueueTotal >= move_meme_min)
+            isFull = true;
     });
 
     if (currentQueueTotal >= move_meme_min) {
         outstanding_bids.push({ id: currentQueue[0].id, created: new Date(), amount: currentQueueTotal, currency: "GBG", sender: "memestagram", bids: currentQueue });
         currentQueue = [];
+        memestagram_bids = nextQueue;
+        processMemeQueue();
+    } else {
+        memestagram_bids = [].concat(currentQueue).concat(nextQueue);
     }
-
-    memestagram_bids = [].concat(currentQueue).concat(nextQueue);
 }
 
 function getUsdValue(bid) { return bid.amount * ((bid.currency == 'GBG') ? sbd_price : steem_price); }
