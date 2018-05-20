@@ -684,84 +684,11 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
         // Check if there is already a bid for this post in the current round
         var existing_bid = round.find(bid => bid.url === result.url);
+        var existing_meme_bid = memestagram_bids.find(bid => bid.url === result.url);
 
         // Check for min and max bid values in configuration settings
         var min_bid = config.min_bid ? parseFloat(config.min_bid) : 0;
         var max_bid = config.max_bid ? parseFloat(config.max_bid) : 9999;
-
-
-        if(amount < min_bid) {
-
-           if (!existing_bid) {
-
-               var min_meme_bid = config.min_meme_bid ? parseFloat(config.min_meme_bid) : 0;
-
-               // another rules for memestagram
-               if (isMemestagram(result)) {
-                   var existing_meme_bid = memestagram_bids.find(bid => bid.url === result.url);
-
-                   if (existing_meme_bid) {
-                       // There is already a bid for this post in the current round
-                       utils.log('Existing Meme Bid Found - New Amount: ' + amount + ', Total Amount: ' + (existing_meme_bid.amount + amount));
-
-                       var new_amount = 0;
-
-                       if (existing_meme_bid.currency == currency) {
-                           new_amount = existing_meme_bid.amount + amount;
-                       } else if (existing_meme_bid.currency == 'GOLOS') {
-                           new_amount = existing_meme_bid.amount + amount * sbd_price / steem_price;
-                       } else if (existing_meme_bid.currency == 'GBG') {
-                           new_amount = existing_meme_bid.amount + amount * steem_price / sbd_price;
-                       }
-                       existing_meme_bid.amount = new_amount;
-                   } else {
-
-                       // if in pack already
-                       let isInPack = false;
-                       for (var i = 0; i < outstanding_bids.length; i++) {
-                           if (isInPack) break;
-                           if (outstanding_bids[i].bids) {
-                               for (var j = 0; j < outstanding_bids[i].bids.length; j++) {
-                                   if (outstanding_bids[i].bids[j].url === result.url) {
-                                       isInPack = true;
-                                       break;
-                                   }
-                               }
-                           }
-                       }
-                       if (isInPack) {
-                           let refundAmount = amount-0.5;
-                           if (refundAmount > 0)
-                               refund(sender, refundAmount, currency, 'is_in_pack_already');
-                           return;
-                       }
-
-                       if (amount < config.min_meme_bid) {
-                           utils.log("invalid bid: below_min_bid");
-                           return;
-                       } else {
-                           utils.log('Valid Meme Bid - Amount: ' + amount + ' ' + currency + ', Title: ' + result.title);
-                           memestagram_bids.push({ id: id, created: created, amount: amount, currency: currency, sender: sender, author: result.author, permlink: result.permlink, url: result.url });
-                       }
-                   }
-                   return;
-               } else {
-                   // Bid amount is too low (make sure it's above the min_refund_amount setting)
-                   if(!config.min_refund_amount || amount >= config.min_refund_amount) {
-                       //refund(op[1].from, amount, currency, 'below_min_bid');
-                       utils.log("invalid bid: below_min_bid");
-                       return;
-                   } else {
-                       utils.log('Invalid bid - below min bid amount and too small to refund.');
-                   }
-                   return;
-               }
-            }
-        } else if (amount > max_bid) {
-            // Bid amount is too high
-            //refund(op[1].from, amount, currency, 'above_max_bid');
-            utils.log("invalid bid: above_max_bid");
-        }
 
         if(existing_bid) {
           // There is already a bid for this post in the current round
@@ -786,10 +713,72 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           // } else {
             existing_bid.amount = new_amount;
           // }
+        } else if (existing_meme_bid) {
+            // There is already a bid for this post in the current round
+            utils.log('Existing Meme Bid Found - New Amount: ' + amount + ', Total Amount: ' + (existing_meme_bid.amount + amount));
+
+            var new_amount = 0;
+
+            if (existing_meme_bid.currency == currency) {
+                new_amount = existing_meme_bid.amount + amount;
+            } else if (existing_meme_bid.currency == 'GOLOS') {
+                new_amount = existing_meme_bid.amount + amount * sbd_price / steem_price;
+            } else if (existing_meme_bid.currency == 'GBG') {
+                new_amount = existing_meme_bid.amount + amount * steem_price / sbd_price;
+            }
+            existing_meme_bid.amount = new_amount;
         } else {
-          // All good - push to the array of valid bids for this round
-          utils.log('Valid Bid - Amount: ' + amount + ' ' + currency + ', Title: ' + result.title);
-          round.push({ id: id, created: created, amount: amount, currency: currency, sender: sender, author: result.author, permlink: result.permlink, url: result.url });
+            if(amount < min_bid) {
+
+                var min_meme_bid = config.min_meme_bid ? parseFloat(config.min_meme_bid) : 0;
+
+                // another rules for memestagram
+                if (isMemestagram(result)) {
+
+                    // if in pack already
+                    let isInPack = false;
+                    for (var i = 0; i < outstanding_bids.length; i++) {
+                        if (isInPack) break;
+                        if (outstanding_bids[i].bids) {
+                            for (var j = 0; j < outstanding_bids[i].bids.length; j++) {
+                                if (outstanding_bids[i].bids[j].url === result.url) {
+                                    isInPack = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (isInPack) {
+                        let refundAmount = amount-0.5;
+                        if (refundAmount > 0)
+                            refund(sender, refundAmount, currency, 'is_in_pack_already');
+                        return;
+                    }
+
+                    if (amount < min_meme_bid) {
+                        utils.log("invalid bid: below_min_bid");
+                        return;
+                    } else {
+                        utils.log('Valid Meme Bid - Amount: ' + amount + ' ' + currency + ', Title: ' + result.title);
+                        memestagram_bids.push({ id: id, created: created, amount: amount, currency: currency, sender: sender, author: result.author, permlink: result.permlink, url: result.url });
+                    }
+                    return;
+                } else {
+                    // Bid amount is too low (make sure it's above the min_refund_amount setting)
+                    if(!config.min_refund_amount || amount >= config.min_refund_amount) {
+                        //refund(op[1].from, amount, currency, 'below_min_bid');
+                        utils.log("invalid bid: below_min_bid");
+                        return;
+                    } else {
+                        utils.log('Invalid bid - below min bid amount and too small to refund.');
+                    }
+                    return;
+                }
+            } else {
+                // All good - push to the array of valid bids for this round
+                utils.log('Valid Bid - Amount: ' + amount + ' ' + currency + ', Title: ' + result.title);
+                round.push({ id: id, created: created, amount: amount, currency: currency, sender: sender, author: result.author, permlink: result.permlink, url: result.url });
+            }
         }
 
         // If a witness_vote transfer memo is set, check if the sender votes for the bot owner as witness and send them a message if not
