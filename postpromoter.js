@@ -558,9 +558,10 @@ function checkRoundFillLimit(amount, currency) {
 }
 
 function isMemestagram(post) {
+
     var meta = JSON.parse(post.json_metadata);
 
-    if (meta.app && meta.app === 'memestagram') return true;
+    if (meta.app && (meta.app === 'memestagram' || meta.app === 'memestagram.io')) return true;
     return false;
 }
 
