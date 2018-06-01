@@ -562,6 +562,8 @@ function isMemestagram(post) {
     var meta = JSON.parse(post.json_metadata);
 
     if (meta.app && (meta.app === 'memestagram' || meta.app === 'memestagram.io')) return true;
+
+    if (meta.tags && meta.tags.length > 0 && meta.tags[0] === 'memestagram') return true;
     return false;
 }
 
