@@ -559,11 +559,18 @@ function checkRoundFillLimit(amount, currency) {
 
 function isMemestagram(post) {
 
-    var meta = JSON.parse(post.json_metadata);
+    if (post.beneficiaries) {
+        var ben = post.beneficiaries.find(b => b.account === 'memestagram');
+        if (ben && ben.weight >= 666) return true; // equals or more 6.66%
+    }
 
-    if (meta.app && (meta.app === 'memestagram' || meta.app === 'memestagram.io')) return true;
+    // DEPRICATED
+    // var meta = JSON.parse(post.json_metadata);
+    //
+    // if (meta.app && (meta.app === 'memestagram' || meta.app === 'memestagram.io')) return true;
+    // if (meta.tags && meta.tags.length > 0 && meta.tags[0] === 'memestagram') return true;
 
-    if (meta.tags && meta.tags.length > 0 && meta.tags[0] === 'memestagram') return true;
+
     return false;
 }
 
