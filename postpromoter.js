@@ -633,8 +633,8 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
             // If comments are not allowed then we need to first check if the post is a comment
             if(!config.allow_comments && (result.parent_author != null && result.parent_author != '')) {
-              //refund(sender, amount, currency, 'no_comments');
-                utils.log("invalid bid: no_comments");
+              refund(sender, amount, currency, 'no_comments');
+              utils.log("invalid bid: no_comments");
               return;
             }
 
@@ -646,7 +646,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                 var tag = tags.find(t => config.blacklist_settings.blacklisted_tags.indexOf(t) >= 0);
 
                 if(tag) {
-                  //refund(sender, amount, currency, 'blacklist_tag', 0, tag);
+                    refund(sender, amount, currency, 'blacklist_tag', 0, tag);
                     utils.log("invalid bid: blacklist_tag");
                   return;
                 }
@@ -798,6 +798,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                         return;
                     } else {
                         utils.log('Invalid bid - below min bid amount and too small to refund.');
+                        return
                     }
                     return;
                 }
