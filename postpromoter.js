@@ -782,6 +782,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                     }
 
                     if (amount < min_meme_bid) {
+                        refund(op[1].from, amount, currency, 'below_min_bid');
                         utils.log("invalid bid: below_min_bid");
                         return;
                     } else {
@@ -792,7 +793,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                 } else {
                     // Bid amount is too low (make sure it's above the min_refund_amount setting)
                     if(!config.min_refund_amount || amount >= config.min_refund_amount) {
-                        //refund(op[1].from, amount, currency, 'below_min_bid');
+                        refund(op[1].from, amount, currency, 'below_min_bid');
                         utils.log("invalid bid: below_min_bid");
                         return;
                     } else {
