@@ -775,7 +775,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                         }
                     }
                     if (isInPack) {
-                        refund(sender, refundAmount, currency, 'is_in_pack_already');
+                        refund(sender, amount, currency, 'is_in_pack_already');
                         return;
                     }
 
