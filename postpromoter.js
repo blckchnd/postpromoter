@@ -260,7 +260,7 @@ function checkOutdated() {
         var created = new Date(bid.created);
         if ((new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
             // This post is already voted on by this bot or the post is too old to be voted on
-            //refund(bid.sender, bid.amount, bid.currency, 'max_age');
+            refund(bid.sender, bid.amount, bid.currency, 'max_age');
             utils.log("invalid bid: max_age");
             return;
         }
@@ -276,7 +276,7 @@ function checkOutdated() {
         var created = new Date(bid.created);
         if ((new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
             // This post is already voted on by this bot or the post is too old to be voted on
-            //refund(bid.sender, bid.amount, bid.currency, 'max_age');
+            refund(bid.sender, bid.amount, bid.currency, 'max_age');
             utils.log("invalid bid: max_age");
             return;
         }
