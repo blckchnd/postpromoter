@@ -661,7 +661,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
             if (votes.length > 0 || (new Date() - created) >= (config.max_post_age * 60 * 60 * 1000)) {
                 // This post is already voted on by this bot or the post is too old to be voted on
-                //refund(sender, amount, currency, ((votes.length > 0) ? 'already_voted' : 'max_age'));
+                refund(sender, amount, currency, ((votes.length > 0) ? 'already_voted' : 'max_age'));
                 utils.log("invalid bid:" + ((votes.length > 0) ? 'already_voted' : 'max_age'));
                 return;
             }
