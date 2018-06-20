@@ -486,8 +486,6 @@ function getTransactions(callback) {
     for (var i = 0; i < result.length; i++) {
       var trans = result[i];
 
-      console.log("Trans:", JSON.stringify(trans, undefined, 4));
-
       var id = trans[0];
       var op = trans[1].op;
 
