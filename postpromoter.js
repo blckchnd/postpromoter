@@ -468,7 +468,7 @@ function getTransactions(callback) {
   // If this is the first time the bot is run after a restart get a larger list of transactions to make sure none are missed
   if (first_load && last_trans > 0) {
     utils.log('First run - loading all transactions since bot was stopped.');
-    num_trans = 1000;
+    num_trans = 5;
   }
 
   steem.api.getAccountHistory(account.name, -1, num_trans, function (err, result) {
@@ -485,6 +485,9 @@ function getTransactions(callback) {
 
     for (var i = 0; i < result.length; i++) {
       var trans = result[i];
+
+      console.log("Trans:", JSON.stringify(trans, undefined, 4));
+
       var id = trans[0];
       var op = trans[1].op;
 
@@ -520,17 +523,16 @@ function getTransactions(callback) {
             if(delegator)
               delegator.new_vesting_shares = op[1].vesting_shares;
             else {
-							delegator = { delegator: op[1].delegator, vesting_shares: 0, new_vesting_shares: op[1].vesting_shares };
-              delegators.push(delegator);
-						}
+                delegator = { delegator: op[1].delegator, vesting_shares: 0, new_vesting_shares: op[1].vesting_shares };
+  delegators.push(delegator);
+            }
 
             // Save the updated list of delegators to disk
             saveDelegators();
 
-						// Check if we should send a delegation message
-						if(parseFloat(delegator.new_vesting_shares) > parseFloat(delegator.vesting_shares) && config.transfer_memos['delegation'] && config.transfer_memos['delegation'] != '')
-							refund(op[1].delegator, 0.001, 'GBG', 'delegation', 0, utils.vestsToSP(parseFloat(delegator.new_vesting_shares)).toFixed());
-
+            // Check if we should send a delegation message
+            if(parseFloat(delegator.new_vesting_shares) > parseFloat(delegator.vesting_shares) && config.transfer_memos['delegation'] && config.transfer_memos['delegation'] != '')
+                refund(op[1].delegator, 0.001, 'GBG', 'delegation', 0, utils.vestsToSP(parseFloat(delegator.new_vesting_shares)).toFixed());
             utils.log('*** Delegation Update - ' + op[1].delegator + ' has delegated ' + op[1].vesting_shares);
           }
 
@@ -791,7 +793,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                 } else {
                     // Bid amount is too low (make sure it's above the min_refund_amount setting)
                     if(!config.min_refund_amount || amount >= config.min_refund_amount) {
-                        refund(op[1].from, amount, currency, 'below_min_bid');
+                        refund(sender, amount, currency, 'below_min_bid');
                         utils.log("invalid bid: below_min_bid");
                         return;
                     } else {
