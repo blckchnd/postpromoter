@@ -1274,42 +1274,48 @@ function processMemeQueue() {
     var currentQueue = [];
     var nextQueue = [];
 
-    var move_meme_min = config.move_meme_min ? parseFloat(config.move_meme_min) : 35;
-    var move_meme_max = config.move_meme_max ? parseFloat(config.move_meme_max) : 45;
+    var move_meme_min = config.move_meme_min ? parseFloat(config.move_meme_min) : 30;
+    var move_meme_max = config.move_meme_max ? parseFloat(config.move_meme_max) : 32;
 
     var min_bid = config.min_bid ? parseFloat(config.min_bid) : 0;
 
     sortBids(memestagram_bids);
     memestagram_bids.reverse();
 
-    var currentQueueTotal = 0;
-    var isFull = false;
+    var packs = [];
+
     memestagram_bids.forEach((bid) => {
+
         // if amount enough for normal bid - move to uplift
-        if (bid.amount > min_bid) {
-            outstanding_bids.push(bid);
+        // if (bid.amount > min_bid) {
+        //     outstanding_bids.push(bid);
+        //     return;
+        // }
+
+        for (let i = 0; i < packs.length; i++) {
+            let pack = packs[i];
+
+            if (pack.amount >= move_meme_min || (pack.amount + bid.amount) > move_meme_max) continue;
+
+            pack.amount += bid.amount;
+            pack.bids.push(bid);
             return;
         }
 
-        if (isFull || (currentQueueTotal + bid.amount) > move_meme_max) {
-            nextQueue.push(bid);
-            return;
-        }
-        currentQueueTotal += bid.amount;
-        currentQueue.push(bid);
-
-        if (currentQueueTotal >= move_meme_min)
-            isFull = true;
+        packs.push({
+            amount: bid.amount,
+            bids: [bid]
+        });
     });
 
-    if (currentQueueTotal >= move_meme_min) {
-        outstanding_bids.push({ id: currentQueue[0].id, created: new Date(), amount: currentQueueTotal, currency: "GBG", sender: "memestagram", bids: currentQueue });
-        currentQueue = [];
-        memestagram_bids = nextQueue;
-        processMemeQueue();
-    } else {
-        memestagram_bids = [].concat(currentQueue).concat(nextQueue);
-    }
+    memestagram_bids = [];
+    packs.forEach(pack => {
+        if (pack.amount >= move_meme_min) {
+            outstanding_bids.push({ id: pack.bids[0].id, created: new Date(), amount: pack.amount, currency: "GBG", sender: "memestagram", bids: pack.bids });
+        } else {
+            memestagram_bids = memestagram_bids.concat(pack.bids)
+        }
+    });
 }
 
 function getUsdValue(bid) { return bid.amount * ((bid.currency == 'GBG') ? sbd_price : steem_price); }
