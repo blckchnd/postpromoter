@@ -589,6 +589,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
           break;
       case 'memestagram.io':
       case 'www.memestagram.io':
+      case 'golos.memestagram.io':
           var author = memo.substring(memo.indexOf("/card/")+6,memo.lastIndexOf('/'));
           break;
       default:
