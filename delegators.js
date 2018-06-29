@@ -1,4 +1,4 @@
-const steem = require('steem');
+const steem = require('@steemit/steem-js');
 var utils = require('./utils');
 
 var delegation_transactions = [];

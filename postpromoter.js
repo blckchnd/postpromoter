@@ -31,10 +31,8 @@ function startup() {
   loadConfig();
 
   // Connect to the specified RPC node
-  var rpc_node = config.rpc_nodes ? config.rpc_nodes[0] : (config.rpc_node ? config.rpc_node : 'https://api.golos.blckchnd.com');
+  var rpc_node = config.rpc_nodes ? config.rpc_nodes[0] : (config.rpc_node ? config.rpc_node : 'https://api.steemit.com');
   steem.api.setOptions({ transport: 'http', uri: rpc_node, url: rpc_node });
-  steem.config.set('address_prefix','GLS');
-  steem.config.set('chain_id','782a3039b478c839e4cb0c941ff4eaeb7df40bdd68bd441afd444b9da763de12');
 
   utils.log("* START - Version: " + version + " *");
   utils.log("Connected to: " + rpc_node);
@@ -130,7 +128,7 @@ function startup() {
   // Schedule to run every 10 seconds
   setInterval(startProcess, 10000);
 
-  // Load updated GOLOS and GBG prices every 30 minutes
+  // Load updated STEEM and SBD prices every 30 minutes
   loadPrices();
   setInterval(loadPrices, 30 * 60 * 1000);
 }
@@ -157,9 +155,9 @@ function startProcess() {
 				current_vp = vp;
 
 				if(config.detailed_logging) {
-					var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GOLOS') ? b.amount : 0); }, 0), 3);
-					var bids_sbd = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GBG') ? b.amount : 0); }, 0), 3);
-					utils.log((config.backup_mode ? '* BACKUP MODE *' : '') + 'Voting Power: ' + utils.format(vp / 100) + '% | Time until next round: ' + utils.toTimer(utils.timeTilFullPower(vp)) + ' | Bids: ' + outstanding_bids.length + ' | ' + bids_sbd + ' GBG | ' + bids_steem + ' GOLOS');
+					var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'STEEM') ? b.amount : 0); }, 0), 3);
+					var bids_sbd = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'SBD') ? b.amount : 0); }, 0), 3);
+					utils.log((config.backup_mode ? '* BACKUP MODE *' : '') + 'Voting Power: ' + utils.format(vp / 100) + '% | Time until next round: ' + utils.toTimer(utils.timeTilFullPower(vp)) + ' | Bids: ' + outstanding_bids.length + ' | ' + bids_sbd + ' SBD | ' + bids_steem + ' STEEM');
 				}
 
                 // Check outdated
@@ -250,10 +248,10 @@ function startVoting(bids) {
     return total + getUsdValue(bid);
   }, 0);
 
-  var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GOLOS') ? b.amount : 0); }, 0), 3);
-  var bids_sbd = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'GBG') ? b.amount : 0); }, 0), 3);
+  var bids_steem = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'STEEM') ? b.amount : 0); }, 0), 3);
+  var bids_sbd = utils.format(outstanding_bids.reduce(function(t, b) { return t + ((b.currency == 'SBD') ? b.amount : 0); }, 0), 3);
   utils.log('=======================================================');
-  utils.log('Bidding Round End! Starting to vote! Total bids: ' + bids.length + ' - $' + total + ' | ' + bids_sbd + ' GBG | ' + bids_steem + ' GOLOS');
+  utils.log('Bidding Round End! Starting to vote! Total bids: ' + bids.length + ' - $' + total + ' | ' + bids_sbd + ' SBD | ' + bids_steem + ' STEEM');
 
   var adjusted_weight = 1;
 
@@ -475,7 +473,7 @@ function getTransactions(callback) {
 
 						// Check if we should send a delegation message
 						if(parseFloat(delegator.new_vesting_shares) > parseFloat(delegator.vesting_shares) && config.transfer_memos['delegation'] && config.transfer_memos['delegation'] != '')
-							refund(op[1].delegator, 0.001, 'GBG', 'delegation', 0, utils.vestsToSP(parseFloat(delegator.new_vesting_shares)).toFixed());
+							refund(op[1].delegator, 0.001, 'SBD', 'delegation', 0, utils.vestsToSP(parseFloat(delegator.new_vesting_shares)).toFixed());
 
             utils.log('*** Delegation Update - ' + op[1].delegator + ' has delegated ' + op[1].vesting_shares);
           }
@@ -496,8 +494,8 @@ function checkRoundFillLimit(amount, currency) {
 
   var vote_value = utils.getVoteValue(100, voting_account, 10000);
   var vote_value_usd = vote_value / 2 * sbd_price + vote_value / 2;
-  var bid_value = outstanding_bids.reduce(function(t, b) { return t + b.amount * ((b.currency == 'GBG') ? sbd_price : steem_price) }, 0);
-  var new_bid_value = amount * ((currency == 'GBG') ? sbd_price : steem_price);
+  var bid_value = outstanding_bids.reduce(function(t, b) { return t + b.amount * ((b.currency == 'SBD') ? sbd_price : steem_price) }, 0);
+  var new_bid_value = amount * ((currency == 'SBD') ? sbd_price : steem_price);
 
   // Check if the value of the bids is over the round fill limit
   return (vote_value_usd * 0.75 * config.round_fill_limit < bid_value + new_bid_value);
@@ -668,9 +666,9 @@ function checkPost(id, memo, amount, currency, sender, retries) {
 
           if(existing_bid.currency == currency) {
             new_amount = existing_bid.amount + amount;
-          } else if(existing_bid.currency == 'GOLOS') {
+          } else if(existing_bid.currency == 'STEEM') {
             new_amount = existing_bid.amount + amount * sbd_price / steem_price;
-          } else if(existing_bid.currency == 'GBG') {
+          } else if(existing_bid.currency == 'SBD') {
             new_amount = existing_bid.amount + amount * steem_price / sbd_price;
           }
 
@@ -867,14 +865,14 @@ function claimRewards() {
       if (result) {
         if(config.detailed_logging) {
           var rewards_message = "$$$ ==> Rewards Claim";
-          if (parseFloat(account.reward_sbd_balance) > 0) { rewards_message = rewards_message + ' GBG: ' + parseFloat(account.reward_sbd_balance); }
-          if (parseFloat(account.reward_steem_balance) > 0) { rewards_message = rewards_message + ' GOLOS: ' + parseFloat(account.reward_steem_balance); }
+          if (parseFloat(account.reward_sbd_balance) > 0) { rewards_message = rewards_message + ' SBD: ' + parseFloat(account.reward_sbd_balance); }
+          if (parseFloat(account.reward_steem_balance) > 0) { rewards_message = rewards_message + ' STEEM: ' + parseFloat(account.reward_steem_balance); }
           if (parseFloat(account.reward_vesting_balance) > 0) { rewards_message = rewards_message + ' GESTS: ' + parseFloat(account.reward_vesting_balance); }
 
           utils.log(rewards_message);
         }
 
-        // If there are liquid GBG rewards, withdraw them to the specified account
+        // If there are liquid SBD rewards, withdraw them to the specified account
         if(parseFloat(account.reward_sbd_balance) > 0 && config.post_rewards_withdrawal_account && config.post_rewards_withdrawal_account != '') {
 
           // Send liquid post rewards to the specified account
@@ -887,7 +885,7 @@ function claimRewards() {
           });
         }
 
-				// If there are liquid GOLOS rewards, withdraw them to the specified account
+				// If there are liquid STEEM rewards, withdraw them to the specified account
         if(parseFloat(account.reward_steem_balance) > 0 && config.post_rewards_withdrawal_account && config.post_rewards_withdrawal_account != '') {
 
           // Send liquid post rewards to the specified account
@@ -919,8 +917,8 @@ function processWithdrawals() {
   if(config.backup_mode)
     return;
 
-  var has_sbd = config.currencies_accepted.indexOf('GBG') >= 0 && parseFloat(account.sbd_balance) > 0;
-  var has_steem = config.currencies_accepted.indexOf('GOLOS') >= 0 && parseFloat(account.balance) > 0;
+  var has_sbd = config.currencies_accepted.indexOf('SBD') >= 0 && parseFloat(account.sbd_balance) > 0;
+  var has_steem = config.currencies_accepted.indexOf('STEEM') >= 0 && parseFloat(account.balance) > 0;
 
   if (has_sbd || has_steem) {
 
@@ -970,30 +968,30 @@ function processWithdrawals() {
           }
 
           if(has_sbd) {
-            // Check if there is already an GBG withdrawal to this account
-            var withdrawal = withdrawals.find(w => w.to == to_account && w.currency == 'GBG');
+            // Check if there is already an SBD withdrawal to this account
+            var withdrawal = withdrawals.find(w => w.to == to_account && w.currency == 'SBD');
 
             if(withdrawal) {
               withdrawal.amount += parseFloat(account.sbd_balance) * (withdrawal_account.stake / total_stake) * (parseFloat(delegator.vesting_shares) / total_vests) - 0.001;
             } else {
               withdrawals.push({
                 to: to_account,
-                currency: 'GBG',
+                currency: 'SBD',
                 amount: parseFloat(account.sbd_balance) * (withdrawal_account.stake / total_stake) * (parseFloat(delegator.vesting_shares) / total_vests) - 0.001
               });
             }
           }
 
           if(has_steem) {
-            // Check if there is already a GOLOS withdrawal to this account
-            var withdrawal = withdrawals.find(w => w.to == to_account && w.currency == 'GOLOS');
+            // Check if there is already a STEEM withdrawal to this account
+            var withdrawal = withdrawals.find(w => w.to == to_account && w.currency == 'STEEM');
 
             if(withdrawal) {
               withdrawal.amount += parseFloat(account.balance) * (withdrawal_account.stake / total_stake) * (parseFloat(delegator.vesting_shares) / total_vests) - 0.001;
             } else {
               withdrawals.push({
                 to: to_account,
-                currency: 'GOLOS',
+                currency: 'STEEM',
                 amount: parseFloat(account.balance) * (withdrawal_account.stake / total_stake) * (parseFloat(delegator.vesting_shares) / total_vests) - 0.001
               });
             }
@@ -1001,30 +999,30 @@ function processWithdrawals() {
         }
       } else {
         if(has_sbd) {
-          // Check if there is already an GBG withdrawal to this account
-          var withdrawal = withdrawals.find(w => w.to == withdrawal_account.name && w.currency == 'GBG');
+          // Check if there is already an SBD withdrawal to this account
+          var withdrawal = withdrawals.find(w => w.to == withdrawal_account.name && w.currency == 'SBD');
 
           if(withdrawal) {
             withdrawal.amount += parseFloat(account.sbd_balance) * withdrawal_account.stake / total_stake - 0.001;
           } else {
             withdrawals.push({
               to: withdrawal_account.name,
-              currency: 'GBG',
+              currency: 'SBD',
               amount: parseFloat(account.sbd_balance) * withdrawal_account.stake / total_stake - 0.001
             });
           }
         }
 
         if(has_steem) {
-          // Check if there is already a GOLOS withdrawal to this account
-          var withdrawal = withdrawals.find(w => w.to == withdrawal_account.name && w.currency == 'GOLOS');
+          // Check if there is already a STEEM withdrawal to this account
+          var withdrawal = withdrawals.find(w => w.to == withdrawal_account.name && w.currency == 'STEEM');
 
           if(withdrawal) {
             withdrawal.amount += parseFloat(account.balance) * withdrawal_account.stake / total_stake - 0.001;
           } else {
             withdrawals.push({
               to: withdrawal_account.name,
-              currency: 'GOLOS',
+              currency: 'STEEM',
               amount: parseFloat(account.balance) * withdrawal_account.stake / total_stake - 0.001
             });
           }
@@ -1133,9 +1131,9 @@ function loadPrices() {
     try {
       steem_price = parseFloat(JSON.parse(data)[0].price_usd);
 
-      utils.log("Loaded GOLOS price: " + steem_price);
+      utils.log("Loaded STEEM price: " + steem_price);
     } catch (err) {
-      utils.log('Error loading GOLOS price: ' + err);
+      utils.log('Error loading STEEM price: ' + err);
     }
   });
 
@@ -1144,14 +1142,14 @@ function loadPrices() {
     try {
       sbd_price = parseFloat(JSON.parse(data)[0].price_usd);
 
-      utils.log("Loaded GBG price: " + sbd_price);
+      utils.log("Loaded SBD price: " + sbd_price);
     } catch (err) {
-      utils.log('Error loading GBG price: ' + err);
+      utils.log('Error loading SBD price: ' + err);
     }
   });
 }
 
-function getUsdValue(bid) { return bid.amount * ((bid.currency == 'GBG') ? sbd_price : steem_price); }
+function getUsdValue(bid) { return bid.amount * ((bid.currency == 'SBD') ? sbd_price : steem_price); }
 
 function logFailedBid(bid, message) {
   if (message.indexOf('assert_exception') >= 0 && message.indexOf('ERR_ASSERTION') >= 0)

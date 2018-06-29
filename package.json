@@ -13,6 +13,7 @@
   "author": "yabapmatt",
   "license": "MIT",
   "dependencies": {
+    "@steemit/steem-js": "file:///Users/ruslansalikhov/MyProjects/blockchained/steem/steem-js",
     "express": "^4.16.2",
     "request": "^2.83.0"
   }

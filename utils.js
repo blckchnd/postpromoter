@@ -17,7 +17,7 @@ var HOURS = 60 * 60;
  function updateSteemVariables() {
      steem.api.getRewardFund("post", function (e, t) {
        if(t && !e) {
-         rewardBalance = parseFloat(t.reward_balance.replace(" GOLOS", ""));
+         rewardBalance = parseFloat(t.reward_balance.replace(" STEEM", ""));
          recentClaims = t.recent_claims;
        } else {
          log('Error loading reward fund: ' + e);
@@ -26,7 +26,7 @@ var HOURS = 60 * 60;
 
      steem.api.getCurrentMedianHistoryPrice(function (e, t) {
        if(t && !e) {
-         steemPrice = parseFloat(t.base.replace(" GBG", "")) / parseFloat(t.quote.replace(" GOLOS", ""));
+         steemPrice = parseFloat(t.base.replace(" SBD", "")) / parseFloat(t.quote.replace(" STEEM", ""));
        } else {
          log('Error loading steem price: ' + e);
        }
@@ -35,8 +35,8 @@ var HOURS = 60 * 60;
      steem.api.getDynamicGlobalProperties(function (e, t) {
        if(t && !e) {
          votePowerReserveRate = t.vote_power_reserve_rate;
-         totalVestingFund = parseFloat(t.total_vesting_fund_steem.replace(" GOLOS", ""));
-         totalVestingShares = parseFloat(t.total_vesting_shares.replace(" GESTS", ""));
+         totalVestingFund = parseFloat(t.total_vesting_fund_steem.replace(" STEEM", ""));
+         totalVestingShares = parseFloat(t.total_vesting_shares.replace(" VESTS", ""));
 				 steem_per_mvests = ((totalVestingFund / totalVestingShares) * 1000000);
        } else {
          log('Error loading global properties: ' + e);
@@ -103,9 +103,9 @@ function timeTilFullPower(cur_power){
  }
 
  function getVestingShares(account) {
-     var effective_vesting_shares = parseFloat(account.vesting_shares.replace(" GESTS", ""))
-       + parseFloat(account.received_vesting_shares.replace(" GESTS", ""))
-       - parseFloat(account.delegated_vesting_shares.replace(" GESTS", ""));
+     var effective_vesting_shares = parseFloat(account.vesting_shares.replace(" VESTS", ""))
+       + parseFloat(account.received_vesting_shares.replace(" VESTS", ""))
+       - parseFloat(account.delegated_vesting_shares.replace(" VESTS", ""));
      return effective_vesting_shares;
  }
 
