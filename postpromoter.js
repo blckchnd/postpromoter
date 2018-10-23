@@ -604,6 +604,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
       case 'dmania.lol':
           var author = memo.substring(memo.indexOf("/post/")+6,memo.lastIndexOf('/'));
           break;
+      case 'mememe.io':
       case 'memestagram.io':
       case 'www.memestagram.io':
       case 'golos.memestagram.io':
