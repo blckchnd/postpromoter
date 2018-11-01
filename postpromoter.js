@@ -557,23 +557,6 @@ function checkRoundFillLimit(amount, currency) {
   return (vote_value_usd * 0.75 * config.round_fill_limit < bid_value + new_bid_value);
 }
 
-function isMemestagram(post) {
-
-    if (post.beneficiaries) {
-        var ben = post.beneficiaries.find(b => b.account === 'memestagram');
-        if (ben && ben.weight >= 666) return true; // equals or more 6.66%
-    }
-
-    // DEPRICATED
-    // var meta = JSON.parse(post.json_metadata);
-    //
-    // if (meta.app && (meta.app === 'memestagram' || meta.app === 'memestagram.io')) return true;
-    // if (meta.tags && meta.tags.length > 0 && meta.tags[0] === 'memestagram') return true;
-
-
-    return false;
-}
-
 function isMememe(post) {
 
     if (post.beneficiaries) {
@@ -778,7 +761,7 @@ function checkPost(id, memo, amount, currency, sender, retries) {
                 var min_meme_bid = config.min_meme_bid ? parseFloat(config.min_meme_bid) : 0;
 
                 // another rules for memestagram
-                if (isMemestagram(result) || isMememe(result)) {
+                if (isMememe(result)) {
 
                     // if in pack already
                     let isInPack = false;
