@@ -1,5 +1,5 @@
 var fs = require("fs");
-const steem = require('@steemit/steem-js');
+const steem = require('golos-js');
 var utils = require('./utils');
 
 var account = null;
@@ -32,8 +32,9 @@ function startup() {
   loadConfig();
 
   // Connect to the specified RPC node
-  var rpc_node = config.rpc_nodes ? config.rpc_nodes[0] : (config.rpc_node ? config.rpc_node : 'https://api.golos.blckchnd.com');
-  steem.api.setOptions({ transport: 'http', uri: rpc_node, url: rpc_node });
+  var rpc_node = config.rpc_nodes ? config.rpc_nodes[0] : (config.rpc_node ? config.rpc_node : 'wss://api.golos.blckchnd.com/ws');
+  //steem.api.setOptions({ transport: 'http', uri: rpc_node, url: rpc_node });
+  steem.config.set('websocket', rpc_node);
   steem.config.set('address_prefix','GLS');
   steem.config.set('chain_id','782a3039b478c839e4cb0c941ff4eaeb7df40bdd68bd441afd444b9da763de12');
 
@@ -483,6 +484,8 @@ function getTransactions(callback) {
       return;
     }
 
+    console.log("LEN:", result.length);
+
     for (var i = 0; i < result.length; i++) {
       var trans = result[i];
 
@@ -490,6 +493,7 @@ function getTransactions(callback) {
       var op = trans[1].op;
 
         // Check that this is a new transaction that we haven't processed already
+        console.log("X:", trans[0], last_trans);
         if(trans[0] > last_trans) {
 
           // We only care about transfers to the bot
