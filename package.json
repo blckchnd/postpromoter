@@ -13,7 +13,6 @@
   "author": "yabapmatt",
   "license": "MIT",
   "dependencies": {
-    "@steemit/steem-js": "file:../steem-js",
     "express": "^4.16.2",
     "golos-js": "^0.7.6",
     "request": "^2.83.0"

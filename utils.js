@@ -1,5 +1,5 @@
 var fs = require("fs");
-const steem = require('@steemit/steem-js');
+const steem = require('golos-js');
 
 var STEEMIT_100_PERCENT = 10000;
 var STEEMIT_VOTE_REGENERATION_SECONDS = (5 * 60 * 60 * 24);
@@ -15,14 +15,14 @@ var HOURS = 60 * 60;
  var steem_per_mvests;
 
  function updateSteemVariables() {
-     steem.api.getRewardFund("post", function (e, t) {
-       if(t && !e) {
-         rewardBalance = parseFloat(t.reward_balance.replace(" GOLOS", ""));
-         recentClaims = t.recent_claims;
-       } else {
-         log('Error loading reward fund: ' + e);
-       }
-     });
+     // steem.api.getRewardFund("post", function (e, t) {
+     //   if(t && !e) {
+     //     rewardBalance = parseFloat(t.reward_balance.replace(" GOLOS", ""));
+     //     recentClaims = t.recent_claims;
+     //   } else {
+     //     log('Error loading reward fund: ' + e);
+     //   }
+     // });
 
      steem.api.getCurrentMedianHistoryPrice(function (e, t) {
        if(t && !e) {
