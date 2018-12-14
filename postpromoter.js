@@ -484,8 +484,6 @@ function getTransactions(callback) {
       return;
     }
 
-    console.log("LEN:", result.length);
-
     for (var i = 0; i < result.length; i++) {
       var trans = result[i];
 
@@ -493,7 +491,6 @@ function getTransactions(callback) {
       var op = trans[1].op;
 
         // Check that this is a new transaction that we haven't processed already
-        console.log("X:", trans[0], last_trans);
         if(trans[0] > last_trans) {
 
           // We only care about transfers to the bot
